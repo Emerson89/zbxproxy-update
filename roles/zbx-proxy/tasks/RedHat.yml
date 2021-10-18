@@ -1,0 +1,30 @@
+---
+- name: Remove repository (and clean up left-over metadata)
+  yum_repository:
+    name: zabbix-repo
+    state: absent
+  notify: yum-clean-metadata
+  
+- name: Install Zabbix Repo.
+  yum_repository:
+    name: "{{ item.name }}"
+    description: "{{ item.description }}"
+    baseurl: "{{ item.baseurl }}"
+    gpgcheck: "{{ item.gpgcheck }}"
+    gpgkey: "{{ item.gpgkey }}"
+    state: "{{ item.state | default('present') }}"
+  with_items: "{{ zabbix_repo_yum }}"
+
+- name: Update Zabbix packages
+  yum: 
+    name: "{{ item }}"
+    state: latest
+    update_only: yes
+  with_items:
+    - zabbix-proxy-sqlite3
+    - zabbix-agent
+
+- name: Restart zabbix-server
+  systemd:
+    name: zabbix-proxy
+    state: restarted

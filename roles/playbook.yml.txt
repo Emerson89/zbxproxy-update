@@ -1,0 +1,13 @@
+---
+- name: Update Zabbix-server
+  hosts: all
+  vars:
+    zbx_database_password: Zabbix#2021
+    zabbix_version: 5.0
+  become: yes
+  roles:
+  - zbx-server
+  - zbx-front
+
+##Verificar variaveis de SO
+##ansible -m setup -c local 127.0.0.1

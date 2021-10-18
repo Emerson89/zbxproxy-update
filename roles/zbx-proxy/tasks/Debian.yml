@@ -1,0 +1,82 @@
+---
+- name: Stop Zabbix Agent
+  systemd:
+    name: zabbix-agent
+    state: stopped
+
+- name: Stop Zabbix Agent
+  systemd:
+    name: zabbix-server
+    state: stopped
+
+- name: Stop httpd
+  systemd:
+    name: httpd
+    state: stopped
+  ignore_errors: True
+  
+- name: Criar diretorio Backup
+  ansible.builtin.file:
+    path: /tmp/zabbix-backup
+    state: directory
+    mode: '0755'
+
+- name: Remove nginx php
+  apt:
+    name: "{{ item }}"
+    state: removed
+  with_items:
+    - nginx
+    - php-common
+  ignore_errors: True
+
+- name: Copy files BKP
+  command: "{{item}}"
+  with_items:
+   - cp -R /etc/zabbix/ /tmp/zabbix-backup
+   - cp -R /usr/share/zabbix/ /tmp/zabbix-backup
+  ignore_errors: True
+
+- name: Remove repository (and clean up left-over metadata)
+  apt_repository:
+    name: zabbix-repo
+    state: absent
+  
+- name: Add an Apt signing key zabbix
+  ansible.builtin.apt_key:
+    url: http://repo.zabbix.com/zabbix-official-repo.key
+    state: present
+
+- name: Install repo zabbix
+  apt_repository:
+    repo: "{{ repo_zabbix }}"
+    state: present
+    update_cache: true
+
+- name: Update Zabbix packages
+  apt: 
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items:
+    - zabbix-server-mysql
+    - zabbix-sql-scripts
+    - zabbix-agent
+    - zabbix-get
+
+- name: Copy zabbix_server.conf template 
+  template:
+    src: templates/zabbix_server.conf.44.j2
+    dest: /etc/zabbix/zabbix_server.conf
+  notify: restart zabbix-server
+
+- name: Restart zabbix-server
+  systemd:
+    name: zabbix-server
+    state: restarted
+
+- name: Copy zabbix_agentd.conf template 
+  template:
+    src: templates/zabbix_agentd.conf.44.j2
+    dest: /etc/zabbix/zabbix_agentd.conf
+  notify: restart zabbix-agent
