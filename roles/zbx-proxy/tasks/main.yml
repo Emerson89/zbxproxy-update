@@ -4,3 +4,13 @@
 
 - include_tasks: Debian.yml
   when: ansible_distribution_file_variety == 'Debian'
+
+- name: "Installing the database"
+  include: "sqlite3.yml"
+  when: zabbix_proxy_database == 'sqlite3'
+
+- name: Restart zabbix-proxy
+  service:
+    name: zabbix-proxy
+    state: restarted
+    enabled: yes

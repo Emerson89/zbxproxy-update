@@ -1,14 +1,18 @@
 ---
-zabbix_version: 5.0
-repo_zabbix: deb https://repo.zabbix.com/zabbix/{{ zabbix_version }}/ubuntu {{ ansible_distribution_release }} main
-zabbix_hostname: "{{ ansible_ssh_host }}"
-zbx_database_port: 3306
-zbx_server_address: 127.0.0.1
-zbx_frontend_address: 127.0.0.1
-zbx_database_address: 127.0.0.1
-zbx_database_name: zabbix
+zabbix_hostname: "{{ ansible_hostname }}"
+zabbix_proxy_dbname: zabbix_proxy
 zbx_database_user: zabbix
 zbx_database_password: zabbix
+zbx_database_address: localhost
+zbx_database_port: 3306
+zbx_user_privileges: localhost
+zabbix_server_ip: localhost
+
+# URL do repo.zabbix.com da versão do Zabbix Release Ubuntu
+zabbix_version: 4.4
+repo_zabbix: deb https://repo.zabbix.com/zabbix/{{ zabbix_version }}/ubuntu {{ ansible_distribution_release }} main
+
+# URL do repo.zabbix.com da versão do Zabbix Release RedHat
 zabbix_repo: zabbix
 zabbix_repo_yum:
   - name: zabbix
@@ -22,20 +26,16 @@ zabbix_repo_yum:
     baseurl: http://repo.zabbix.com/non-supported/rhel/{{ ansible_distribution_major_version }}/$basearch/
     gpgcheck: 0
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-ZABBIX
-    state: present
-# Zabbix Server parameters
-zbx_start_pollers: 10
-zbx_start_pollersunreachable: 10
-zbx_start_trappers: 10
-zbx_start_pingers: 10
-zbx_timeout: 30
-zbx_cache_size: 256M
-zbx_value_cache_size: 256M
-# Frontend parameters
-time_zone: America/Sao_Paulo
-# Databases.
-mysql_databases: []
-#   - name: example
-#     collation: utf8_general_ci
-#     encoding: utf8
-#     replicate: 1
+    state: present 
+
+zabbix_database_creation: True
+zabbix_database_sqlload: True
+path_db_sqlite: sqlite3
+zabbix_proxy_database: sqlite3
+
+
+
+
+
+
+

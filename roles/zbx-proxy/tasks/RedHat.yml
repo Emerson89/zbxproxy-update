@@ -1,10 +1,57 @@
 ---
+- name: Stop zabbix-agent
+  systemd:
+    name: zabbix-agent
+    state: stopped
+
+- name: Stop zabbix-proxy
+  systemd:
+    name: zabbix-proxy
+    state: stopped
+
+- name: Find file dbsqlite
+  shell: find / -name *proxy.db
+  register: path
+
+- debug: 
+    msg: "{{ path.stdout }}"
+
+- name: Remove file
+  shell: rm -rf "{{ path.stdout }}"
+  ignore_errors: true
+
+- name: "RedHat | Set facts for Zabbix <= 5.0"
+  set_fact:
+    datafiles_path: "/usr/share/doc/zabbix-proxy-{{ zabbix_proxy_database }}*"
+  when:
+    - zabbix_version is version_compare('5.0', '<=')
+    - ansible_distribution_major_version == '7'
+  tags:
+    - zabbix-proxy
+  
+- name: "RedHat | Set facts for Zabbix <= 5.0"
+  set_fact:
+    datafiles_path: "/usr/share/doc/zabbix-proxy-{{ zabbix_proxy_database }}"
+  when:
+    - zabbix_version is version_compare('5.0', '<=')
+    - ansible_distribution_major_version == '8'
+  tags:
+    - zabbix-proxy
+  
+- name: "RedHat | Set facts for Zabbix >= 5.4"
+  set_fact:
+    datafiles_path: "/usr/share/doc/zabbix-sql-scripts/{{ zabbix_proxy_database }}"
+  when:
+    - zabbix_version is version_compare('5.4', '>=')
+  tags:
+    - zabbix-proxy
+    
 - name: Remove repository (and clean up left-over metadata)
   yum_repository:
     name: zabbix-repo
     state: absent
   notify: yum-clean-metadata
-  
+
 - name: Install Zabbix Repo.
   yum_repository:
     name: "{{ item.name }}"
@@ -16,15 +63,32 @@
   with_items: "{{ zabbix_repo_yum }}"
 
 - name: Update Zabbix packages
-  yum: 
+  yum:
     name: "{{ item }}"
     state: latest
     update_only: yes
   with_items:
-    - zabbix-proxy-sqlite3
+    - zabbix-proxy-{{ zabbix_proxy_database }}
     - zabbix-agent
+  when: zabbix_version <= 5.0
 
-- name: Restart zabbix-server
+- name: Update Zabbix packages
+  yum:
+    name: "{{ item }}"
+    state: latest
+    update_only: yes
+  with_items:
+    - zabbix-sql-scripts
+    - zabbix-proxy-{{ zabbix_proxy_database }}
+    - zabbix-agent
+  when: zabbix_version >= 5.4
+
+- name: Copy zabbix_proxy.conf template
+  template:
+    src: zabbix_proxy.conf.j2
+    dest: /etc/zabbix/zabbix_proxy.conf
+
+- name: Restart zabbix-agent
   systemd:
-    name: zabbix-proxy
+    name: zabbix-agent
     state: restarted
