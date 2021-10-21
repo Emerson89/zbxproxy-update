@@ -1,16 +1,4 @@
----
-  - name: restart zabbix-server
-    service:
-      name: zabbix-server
-      state: restarted
-      enabled: yes
-
-  - name: Check if zabbix-agent started
-    service:
-      name: zabbix-agent
-      state: started
-      enabled: yes
-
+--- 
   - name: restart zabbix-agent
     service:
       name: zabbix-agent

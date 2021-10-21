@@ -93,7 +93,8 @@
     src: zabbix_proxy.conf.j2
     dest: /etc/zabbix/zabbix_proxy.conf
 
-- name: Restart zabbix-agent
-  systemd:
-    name: zabbix-agent
-    state: restarted
+- name: Copy zabbix_proxy.conf template
+  template:
+    src: zabbix_agentd.conf.44.j2
+    dest: /etc/zabbix/zabbix_agentd.conf
+  notify: restart zabbix-agent

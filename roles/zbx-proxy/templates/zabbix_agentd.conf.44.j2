@@ -167,7 +167,7 @@ ServerActive=127.0.0.1
 # Default:
 # Hostname=
 
-Hostname=Zabbix server
+#Hostname=Zabbix server
 
 ### Option: HostnameItem
 #	Item used for generating Hostname if it is undefined. Ignored if Hostname is defined.
@@ -175,7 +175,7 @@ Hostname=Zabbix server
 #
 # Mandatory: no
 # Default:
-# HostnameItem=system.hostname
+HostnameItem=system.hostname
 
 ### Option: HostMetadata
 #	Optional parameter that defines host metadata.
@@ -278,7 +278,7 @@ Hostname=Zabbix server
 # Mandatory: no
 # Range: 1-30
 # Default:
-# Timeout=3
+Timeout=30
 
 ### Option: AllowRoot
 #	Allow the agent to run as 'root'. If disabled and the agent is started by 'root', the agent
