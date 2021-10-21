@@ -78,9 +78,14 @@
     state: latest
     update_only: yes
   with_items:
-    - zabbix-sql-scripts
     - zabbix-proxy-{{ zabbix_proxy_database }}
     - zabbix-agent
+  when: zabbix_version >= 5.4
+
+- name: Install zabbix-scripts >= 5.4
+  yum:
+    name: zabbix-sql-scripts
+    state: present
   when: zabbix_version >= 5.4
 
 - name: Copy zabbix_proxy.conf template

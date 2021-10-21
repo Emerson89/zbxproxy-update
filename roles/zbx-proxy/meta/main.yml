@@ -1,6 +1,6 @@
 galaxy_info:
   author: Emerson
-  description: Update Versão Zabbix-server para 5.0
+  description: Update Versão Zabbix-proxy
   company: your company (optional)
 
   # If the issue tracker for your role is not on github, uncomment the
