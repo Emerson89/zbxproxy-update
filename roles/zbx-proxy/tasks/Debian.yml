@@ -4,79 +4,104 @@
     name: zabbix-agent
     state: stopped
 
-- name: Stop Zabbix Agent
+- name: Stop Zabbix Proxy
   systemd:
-    name: zabbix-server
+    name: zabbix-proxy
     state: stopped
 
-- name: Stop httpd
-  systemd:
-    name: httpd
-    state: stopped
-  ignore_errors: True
+- name: Find file dbsqlite
+  shell: find / -name *proxy.db
+  register: path
+
+- debug: 
+    msg: "{{ path.stdout }}"
+
+- name: Remove file
+  shell: rm -rf "{{ path.stdout }}"
+  ignore_errors: true
   
-- name: Criar diretorio Backup
-  ansible.builtin.file:
-    path: /tmp/zabbix-backup
-    state: directory
-    mode: '0755'
+- name: "Debian | Set facts for Zabbix <= 5.0"
+  set_fact:
+    datafiles_path: "/usr/share/doc/zabbix-proxy-{{ zabbix_proxy_database }}"
+  when:
+    - zabbix_version is version_compare('5.0', '<=')
 
-- name: Remove nginx php
+- name: "Debian | Set facts for Zabbix >= 5.4"
+  set_fact:
+    datafiles_path: "/usr/share/doc/zabbix-sql-scripts/{{ zabbix_proxy_database }}"
+  when:
+    - zabbix_version is version_compare('5.4', '>=')
+
+- name: Only run update
   apt:
-    name: "{{ item }}"
-    state: removed
-  with_items:
-    - nginx
-    - php-common
-  ignore_errors: True
+    update_cache: yes
+    upgrade: yes
 
-- name: Copy files BKP
-  command: "{{item}}"
-  with_items:
-   - cp -R /etc/zabbix/ /tmp/zabbix-backup
-   - cp -R /usr/share/zabbix/ /tmp/zabbix-backup
-  ignore_errors: True
-
-- name: Remove repository (and clean up left-over metadata)
-  apt_repository:
-    name: zabbix-repo
-    state: absent
-  
 - name: Add an Apt signing key zabbix
-  ansible.builtin.apt_key:
+  apt_key:
     url: http://repo.zabbix.com/zabbix-official-repo.key
     state: present
 
 - name: Install repo zabbix
   apt_repository:
-    repo: "{{ repo_zabbix }}"
+    repo: "{{ item }} https://repo.zabbix.com/zabbix/{{ zabbix_version }}/ubuntu {{ ansible_distribution_release }} main"
     state: present
-    update_cache: true
+  when: zabbix_repo == "zabbix"
+  with_items:
+    - deb-src
+    - deb
+
+- name: Install packages dependencies
+  apt:
+    name:
+        - net-tools
+        - vim
+        - nano
+        - wget
+        - telnet
+        - rsync
+        - git
+        - python3
+        - python3-pip
+    state: present
 
 - name: Update Zabbix packages
-  apt: 
+  apt:
     name: "{{ item }}"
     state: latest
-    update_cache: yes
   with_items:
-    - zabbix-server-mysql
-    - zabbix-sql-scripts
+    - zabbix-proxy-{{ zabbix_proxy_database }}
     - zabbix-agent
-    - zabbix-get
+  when: zabbix_version <= 5.0
 
-- name: Copy zabbix_server.conf template 
-  template:
-    src: templates/zabbix_server.conf.44.j2
-    dest: /etc/zabbix/zabbix_server.conf
-  notify: restart zabbix-server
+- name: Update Zabbix packages
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - zabbix-proxy-{{ zabbix_proxy_database }}
+    - zabbix-agent
+  when: zabbix_version >= 5.4
 
-- name: Restart zabbix-server
+- name: Install zabbix-scripts >= 5.4
+  apt:
+    name: zabbix-sql-scripts
+    state: present
+  when: zabbix_version >= 5.4
+
+- name: Make sure zabbix-agent service is running
   systemd:
-    name: zabbix-server
-    state: restarted
+    name: zabbix-agent
+    state: started
+    enabled: yes
 
-- name: Copy zabbix_agentd.conf template 
+- name: Copy zabbix_proxy.conf template 
   template:
-    src: templates/zabbix_agentd.conf.44.j2
+    src: zabbix_proxy.conf.j2
+    dest: /etc/zabbix/zabbix_proxy.conf
+
+- name: Copy zabbix_agent.conf template 
+  template:
+    src: zabbix_agentd.conf.44.j2
     dest: /etc/zabbix/zabbix_agentd.conf
   notify: restart zabbix-agent
