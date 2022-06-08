@@ -1,0 +1,10 @@
+---
+- hosts: all
+  vars:
+    zabbix_server_ip: 192.168.33.11
+    #zbx_database_password: zabbix2020
+    zabbix_proxy_database: sqlite3
+    zabbix_version: 5.0
+  roles:
+    - zbx-proxy
+  become: yes
