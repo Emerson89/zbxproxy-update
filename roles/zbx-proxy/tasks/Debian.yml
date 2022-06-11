@@ -10,15 +10,19 @@
     state: stopped
 
 - name: Find file dbsqlite
-  shell: find / -name *proxy.db
+  shell: cat /etc/zabbix/zabbix_proxy.conf | grep ^DBName | cut -d= -f2
   register: path
+  when: zabbix_proxy_database == 'sqlite3'
 
 - debug: 
     msg: "{{ path.stdout }}"
+  when: zabbix_proxy_database == 'sqlite3'
 
-- name: Remove file
-  shell: rm -rf "{{ path.stdout }}"
-  ignore_errors: true
+- name: Remove file (delete file)
+  file:
+    path: "{{ path.stdout }}"
+    state: absent
+  when: zabbix_proxy_database == 'sqlite3'
   
 - name: "Debian | Set facts for Zabbix <= 5.0"
   set_fact:
@@ -32,11 +36,6 @@
   when:
     - zabbix_version is version_compare('5.4', '>=')
 
-- name: Only run update
-  apt:
-    update_cache: yes
-    upgrade: yes
-
 - name: Add an Apt signing key zabbix
   apt_key:
     url: http://repo.zabbix.com/zabbix-official-repo.key
@@ -46,24 +45,23 @@
   apt_repository:
     repo: "{{ item }} https://repo.zabbix.com/zabbix/{{ zabbix_version }}/ubuntu {{ ansible_distribution_release }} main"
     state: present
-  when: zabbix_repo == "zabbix"
+  when: 
+   - zabbix_repo == "zabbix"
+   - ansible_distribution == "Ubuntu"
   with_items:
     - deb-src
     - deb
 
-- name: Install packages dependencies
-  apt:
-    name:
-        - net-tools
-        - vim
-        - nano
-        - wget
-        - telnet
-        - rsync
-        - git
-        - python3
-        - python3-pip
+- name: Install repo zabbix
+  apt_repository:
+    repo: "{{ item }} https://repo.zabbix.com/zabbix/{{ zabbix_version }}/debian {{ ansible_distribution_release }} main"
     state: present
+  when: 
+   - zabbix_repo == "zabbix"
+   - ansible_distribution == "Debian"
+  with_items:
+    - deb-src
+    - deb
 
 - name: Update Zabbix packages
   apt:
@@ -72,7 +70,7 @@
   with_items:
     - zabbix-proxy-{{ zabbix_proxy_database }}
     - zabbix-agent
-  when: zabbix_version <= 5.0
+  when: zabbix_version is version_compare('5.0', '==')
 
 - name: Update Zabbix packages
   apt:
@@ -81,27 +79,11 @@
   with_items:
     - zabbix-proxy-{{ zabbix_proxy_database }}
     - zabbix-agent
-  when: zabbix_version >= 5.4
-
-- name: Install zabbix-scripts >= 5.4
-  apt:
-    name: zabbix-sql-scripts
-    state: present
-  when: zabbix_version >= 5.4
+    - zabbix-sql-scripts
+  when: zabbix_version is version_compare('5.4', '>=')
 
 - name: Make sure zabbix-agent service is running
   systemd:
     name: zabbix-agent
     state: started
     enabled: yes
-
-- name: Copy zabbix_proxy.conf template 
-  template:
-    src: zabbix_proxy.conf.j2
-    dest: /etc/zabbix/zabbix_proxy.conf
-
-- name: Copy zabbix_agent.conf template 
-  template:
-    src: zabbix_agentd.conf.44.j2
-    dest: /etc/zabbix/zabbix_agentd.conf
-  notify: restart zabbix-agent

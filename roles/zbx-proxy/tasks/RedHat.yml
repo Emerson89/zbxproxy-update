@@ -10,15 +10,19 @@
     state: stopped
 
 - name: Find file dbsqlite
-  shell: find / -name *proxy.db
+  shell: cat /etc/zabbix/zabbix_proxy.conf | grep ^DBName | cut -d= -f2
   register: path
+  when: zabbix_proxy_database == 'sqlite3'
 
 - debug: 
     msg: "{{ path.stdout }}"
+  when: zabbix_proxy_database == 'sqlite3'
 
-- name: Remove file
-  shell: rm -rf "{{ path.stdout }}"
-  ignore_errors: true
+- name: Remove file (delete file)
+  file:
+    path: "{{ path.stdout }}"
+    state: absent
+  when: zabbix_proxy_database == 'sqlite3'
 
 - name: "RedHat | Set facts for Zabbix <= 5.0"
   set_fact:
@@ -80,21 +84,5 @@
   with_items:
     - zabbix-proxy-{{ zabbix_proxy_database }}
     - zabbix-agent
+    - zabbix-sql-scripts
   when: zabbix_version is version_compare('5.4', '>=')
-
-- name: Install zabbix-scripts >= 5.4
-  yum:
-    name: zabbix-sql-scripts
-    state: present
-  when: zabbix_version is version_compare('5.4', '>=')
-
-- name: Copy zabbix_proxy.conf template
-  template:
-    src: zabbix_proxy.conf.j2
-    dest: /etc/zabbix/zabbix_proxy.conf
-
-- name: Copy zabbix_proxy.conf template
-  template:
-    src: zabbix_agentd.conf.44.j2
-    dest: /etc/zabbix/zabbix_agentd.conf
-  notify: restart zabbix-agent

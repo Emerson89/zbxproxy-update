@@ -5,10 +5,9 @@
 ## Dependencies
 ![Badge](https://img.shields.io/badge/ansible-2.9.10-blue)
 
-## Testados em SO 
+## Testado 
 - ansible 2.9.6
-- Suporte as distribuições baseadas em Debian e RedHat
-- Testado no Ubuntu20, Rocky8 e Centos7 
+- Testado no Ubuntu20, Debian11, Rocky8 e Centos7 
 - Banco de dados Sqlite e Mysql
 
 ## Edit the inventory file 
@@ -17,17 +16,18 @@ Ex:
 [zabbix]
 xx.xxx.xxx.xx 
 ```
-Importante
+Variáveis
 -----------------
-Existem 2 database_types que serão suportados: mysql e sqlite. Você precisará inserir as variáveis no playbook o banco de dados que deseja usar, caso contrário seguirá o default que é SQlite3 assim como outras variáveis.
+| Nome | Descrição | Default | 
+|------|-----------|---------|
+| zabbix_version | Versão zabbix-server | 4.4|
+| zabbix_proxy_database | Tipo de database[mysql/sqlite3] | sqlite3
 
 ## Playbook example
 ```
 ---
 - hosts: all
   vars:
-    zabbix_server_ip: IP-ZABBIX-SERVER
-    zbx_database_password: PASSWORD-DB-ZABBIX
     zabbix_proxy_database: mysql or sqlite3
     zabbix_version: 4.4
   roles:
