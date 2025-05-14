@@ -7,8 +7,10 @@
 
 ## Testado 
 - ansible 2.9.6
-- Testado no `Almalinux8` 
+- Testado no `Ubuntu22` e `Almalinux8` 
 - Banco de dados Sqlite e Mysql
+
+**Sempre realize o backup**
 
 ## Edit the inventory file 
 Ex:
@@ -25,7 +27,7 @@ Variáveis
 
 ## Importante
 
-**Erro mysql** 
+**Erro MySQL** 
 
 ```
 query failed: [1419] You do not have the SUPER privilege and binary logging is enabled (you *might* want to use the less safe log_bin_trust_function_creators variable)
