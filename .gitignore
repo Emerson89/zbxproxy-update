@@ -1,2 +1,4 @@
 *.txt
 *.retry
+private_key
+hosts

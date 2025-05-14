@@ -7,7 +7,7 @@
 
 ## Testado 
 - ansible 2.9.6
-- Testado no Ubuntu20, Debian11, Rocky8 e Centos7 
+- Testado no `Almalinux8` 
 - Banco de dados Sqlite e Mysql
 
 ## Edit the inventory file 
@@ -22,6 +22,16 @@ Variáveis
 |------|-----------|---------|
 | zabbix_version | Versão zabbix-server | 4.4|
 | zabbix_proxy_database | Tipo de database[mysql/sqlite3] | sqlite3
+
+## Importante
+
+**Erro mysql** 
+
+```
+query failed: [1419] You do not have the SUPER privilege and binary logging is enabled (you *might* want to use the less safe log_bin_trust_function_creators variable)
+```
+
+Verifique se o usuário tem privilegio SUPER ou desabilite `log_bin_trust_function_creators = 1` em `my.cnf` antes da atualização
 
 ## Playbook example
 ```
